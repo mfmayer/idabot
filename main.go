@@ -23,8 +23,8 @@ type CompletionResponse struct {
 
 func main() {
 	discordToken := os.Getenv("DISCORD_BOT_TOKEN")
-	openaiApiKey = os.Getenv("IDABOT_OPENAI_API_KEY")
-	authorizedChatPartner = os.Getenv()
+	openaiApiKey = os.Getenv("OPENAI_API_KEY")
+	authorizedChatPartner = os.Getenv("AUTHORIZED_CHAT_PARTNER")
 
 	dg, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
@@ -44,8 +44,22 @@ func main() {
 	<-make(chan struct{})
 }
 
+func isDirectMessage(s *discordgo.Session, channelID string) bool {
+	channel, err := s.Channel(channelID)
+	if err != nil {
+		fmt.Printf("Fehler beim Abrufen des Channels: %v\n", err)
+		return false
+	}
+
+	return channel.Type == discordgo.ChannelTypeDM
+}
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
+	// if m.Author.ID == s.State.User.ID {
+	// 	return
+	// }
+
+	if m.Author.ID != authorizedChatPartner || !isDirectMessage(s, m.ChannelID) {
 		return
 	}
 
