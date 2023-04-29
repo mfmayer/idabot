@@ -1,2 +1,13 @@
 GET https://api.openai.com/v1/models
 Authorization: Bearer {{OPENAI_API_KEY}}
+
+###
+
+POST https://api.openai.com/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer {{OPENAI_API_KEY}}
+
+{
+    "model": "gpt-3.5-turbo",
+    "messages": [{"role": "user", "content": "User:Hello!AI:Hello there! How can I assist you today?\nUser:Mal sehn, ich versuche mich mit der API vertraut zu machen.AI: Sehr gut! Kann ich Ihnen bei etwas bestimmtem helfen oder haben Sie Fragen zur API?User:Deine Antwort hat im \"Content\" Feld plötzlich \"AI:\" beinhaltet. Warum?"}]
+}

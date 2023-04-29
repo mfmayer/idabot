@@ -1,38 +1,34 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/mfmayer/idabot/internal/llm"
 )
 
 var openaiApiKey string
-var authorizedChatPartner string
-
-type CompletionResponse struct {
-	Choices []struct {
-		Text string `json:"text"`
-	} `json:"choices"`
-}
+var authorizedChatPartnerID string
 
 func main() {
 	discordToken := os.Getenv("DISCORD_BOT_TOKEN")
 	openaiApiKey = os.Getenv("OPENAI_API_KEY")
-	authorizedChatPartner = os.Getenv("AUTHORIZED_CHAT_PARTNER")
+	authorizedChatPartnerID = os.Getenv("AUTHORIZED_CHAT_PARTNER_ID")
 
 	dg, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
-		fmt.Println("Fehler beim Erstellen des Discord-Session:", err)
+		fmt.Fprintln(os.Stderr, "Error while creating discord session:", err)
+		os.Exit(-1)
 		return
 	}
 
+	llm := llm.NewLLM(dg.State.User.ID, authorizedChatPartnerID, openaiApiKey)
+
+	dg.AddHandler(llm.)
 	dg.AddHandler(messageCreate)
+	dg.AddHandler(messageDelete)
 
 	err = dg.Open()
 	if err != nil {
@@ -59,11 +55,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// 	return
 	// }
 
-	if m.Author.ID != authorizedChatPartner || !isDirectMessage(s, m.ChannelID) {
+	// if m.Author.ID != authorizedChatPartner || !isDirectMessage(s, m.ChannelID) {
+	// 	return
+	// }
+	if m.Author.ID != authorizedChatPartner {
 		return
 	}
 
-	fmt.Printf("%v: %v\n", m.ChannelID, m.Content)
+	fmt.Printf("create: %v-%v: %v\n", m.ChannelID, m.ID, m.Content)
 
 	if strings.HasPrefix(m.Content, "!gpt4 ") {
 		// query := strings.TrimPrefix(m.Content, "!gpt4 ")
@@ -82,50 +81,3 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func generateResponse(prompt, apiKey string) (string, error) {
-	url := "https://api.openai.com/v1/engines/davinci-codex/completions"
-	headers := map[string]string{
-		"Content-Type":  "application/json",
-		"Authorization": "Bearer " + apiKey,
-	}
-
-	data := map[string]interface{}{
-		"prompt":      prompt,
-		"max_tokens":  150,
-		"temperature": 0.8,
-		"top_p":       1,
-		"n":           1,
-	}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
-	}
-
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	var completionResponse CompletionResponse
-	err = json.Unmarshal(body, &completionResponse)
-	if err != nil {
-		return "", err
-	}
-
-	return completionResponse.Choices[0].Text, nil
-}
