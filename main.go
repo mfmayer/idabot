@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/mfmayer/idabot/internal/llm"
+	"github.com/mfmayer/idabot/internal/dbot"
 )
 
 var openaiApiKey string
@@ -24,60 +23,18 @@ func main() {
 		return
 	}
 
-	llm := llm.NewLLM(dg.State.User.ID, authorizedChatPartnerID, openaiApiKey)
-
-	dg.AddHandler(llm.)
-	dg.AddHandler(messageCreate)
-	dg.AddHandler(messageDelete)
-
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("Fehler beim Öffnen der Verbindung:", err)
+		fmt.Fprintln(os.Stderr, "Error while opening connection:", err)
+		os.Exit(-1)
 		return
 	}
 
-	fmt.Println("Bot läuft. Drücke CTRL-C zum Beenden.")
+	bot := dbot.NewDBOT(dg.State.User.ID, authorizedChatPartnerID, openaiApiKey)
+	dg.AddHandler(bot.DiscordMessageCreate)
+	dg.AddHandler(bot.DiscordMessageDelete)
+	dg.AddHandler(bot.DiscordMessageUpdate)
+
+	fmt.Println("Bot running. Press CTRL-C to close.")
 	<-make(chan struct{})
 }
-
-func isDirectMessage(s *discordgo.Session, channelID string) bool {
-	channel, err := s.Channel(channelID)
-	if err != nil {
-		fmt.Printf("Fehler beim Abrufen des Channels: %v\n", err)
-		return false
-	}
-
-	return channel.Type == discordgo.ChannelTypeDM
-}
-
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// if m.Author.ID == s.State.User.ID {
-	// 	return
-	// }
-
-	// if m.Author.ID != authorizedChatPartner || !isDirectMessage(s, m.ChannelID) {
-	// 	return
-	// }
-	if m.Author.ID != authorizedChatPartner {
-		return
-	}
-
-	fmt.Printf("create: %v-%v: %v\n", m.ChannelID, m.ID, m.Content)
-
-	if strings.HasPrefix(m.Content, "!gpt4 ") {
-		// query := strings.TrimPrefix(m.Content, "!gpt4 ")
-
-		// prompt := "User: " + query + "\nAssistant:"
-
-		// completion, err := generateResponse(prompt, apiKey)
-		// if err != nil {
-		// 	s.ChannelMessageSend(m.ChannelID, "Es gab einen Fehler bei der Kommunikation mit der GPT-4 API.")
-		// 	return
-		// }
-
-		// response := "GPT-4: " + completion
-		// s.ChannelMessageSend(m.ChannelID, response)
-		s.ChannelMessageSend(m.ChannelID, "pong")
-	}
-}
-
