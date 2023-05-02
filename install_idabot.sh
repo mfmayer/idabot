@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Variables
-GO_PROGRAM_REPO="github.com/user/repo" # Repository of the Go program
+GO_PROGRAM_REPO="github.com/mfmayer/idabot" # Repository of the Go program
 REPO_NAME="$(basename ${GO_PROGRAM_REPO})"
 USERNAME="${REPO_NAME}_user"
 GO_PROGRAM_NAME="${REPO_NAME}"
-SERVICE_NAME="${REPO_NAME}_service"
+SERVICE_NAME="${REPO_NAME}"
 
 # Find the absolute path of the 'go' binary
 GO_BINARY_PATH=$(bash -l -c "which go")
@@ -30,7 +30,7 @@ export GOPATH="/home/${USERNAME}/go"
 sudo useradd -m -s /bin/bash ${USERNAME}
 
 # Install Go program using the absolute path of the 'go' binary
-sudo -u ${USERNAME} ${GO_BINARY_PATH} install ${GO_PROGRAM_REPO}
+sudo -u ${USERNAME} ${GO_BINARY_PATH} install ${GO_PROGRAM_REPO}@latest
 
 # Create systemd service file
 sudo bash -c "cat > /etc/systemd/system/${SERVICE_NAME}.service << EOL
