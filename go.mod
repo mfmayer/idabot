@@ -4,7 +4,8 @@ go 1.19
 
 require (
 	github.com/bwmarrin/discordgo v0.27.1
-	github.com/mfmayer/goai v0.0.0-00010101000000-000000000000
+	github.com/mfmayer/goai v0.0.0-20230430150128-2e833767b1b8
+
 )
 
 require (
